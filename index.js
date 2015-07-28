@@ -22,14 +22,29 @@ module.exports = function() {
         app.stack.push(middleware);
     };
 
-    app.next = function() {
-        var m = app.stack[index];
+    app.next = function(err) {
+        var m = app.stack[index++];
         if (m === undefined) {
-            response.statusCode = 404;
+            // now at the bottom of the middleware stack
+            response.statusCode = err? 500 : 404;
             response.end();
             return;
+        } else {
+            try {
+                if (err && m.length >= 4) {
+                    m(err, request, response, app.next);
+                } else {
+                    // without error or this middleware does not handle error
+                    m(request, response, app.next);
+                }
+            } catch(e) {
+                // should return 500 for uncaught error
+                response.statusCode = 500;
+                response.end();
+                return;
+            }
+            app.next(err);
         }
-        index++;
         m(request, response, app.next);
     };
 
