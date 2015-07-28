@@ -1,0 +1,24 @@
+{
+  "name": "myexpress",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yhfyhf/myexpress.git"
+  },
+  "author": "Haofei Ying",
+  "license": "IDC(I Don't Care)",
+  "bugs": {
+    "url": "https://github.com/yhfyhf/myexpress/issues"
+  },
+  "homepage": "https://github.com/yhfyhf/myexpress",
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "mocha": "^2.2.5",
+    "supertest": "^1.0.1"
+  }
+}
