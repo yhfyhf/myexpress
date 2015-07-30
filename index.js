@@ -1,4 +1,5 @@
 http = require("http");
+Layer = require("./lib/layer");
 
 module.exports = function() {
     var index;
@@ -19,13 +20,17 @@ module.exports = function() {
     };
 
     app.stack = [];
-    app.use = function(middleware) {
-        app.stack.push(middleware);
+    app.use = function(path, middleware) {
+        if (typeof(path) === "function") {
+            middleware = path;
+            path = "/";
+        }
+        app.stack.push(new Layer(path, middleware));
     };
 
     app.next = function(err) {
-        var m = app.stack[index++];
-        if (m === undefined) {
+        var layer = app.stack[index++];
+        if (layer === undefined) {
             // now at the bottom of the middleware stack
             if (next) {
                 // at the end of subapp, should return to the parent app by calling next
@@ -36,28 +41,39 @@ module.exports = function() {
                 return;
             }
         } else {
-            if (m.hasOwnProperty('use')) {
-                // this middleware is a subapp
-                if (m.stack.length > 0){
-                    m(request, response, app.next);
-                } else {
-                    app.next(err);
+            var m = layer.handle;
+            if (layer.match(request.url)) {
+                if (m.hasOwnProperty('use')) {
+                    // this middleware is a subapp
+                    if (m.stack.length > 0){
+                        m(request, response, app.next);
+                    } else {
+                        app.next(err);
+                    }
                 }
-            }
-            try {
-                if (err && m.length >= 4) {
-                    m(err, request, response, app.next);
-                } else {
-                    // without error or this middleware does not handle error
-                    m(request, response, app.next);
+                try {
+                    if (err) {
+                        if (m.length >= 4) {
+                            m(err, request, response, app.next);
+                        } else {
+                            app.next(err);
+                        }
+                    } else {
+                        // without error
+                        if (m.length < 4) {
+                            // this middleware does not handle error
+                            m(request, response, app.next);
+                        } else {
+                            app.next(err);
+                        }
+                    }
+                } catch(e) {
+                    // should return 500 for uncaught error
+                    app.next(e);
                 }
-            } catch(e) {
-                // should return 500 for uncaught error
-                response.statusCode = 500;
-                response.end();
-                return;
+            } else {
+                app.next(err);
             }
-            app.next(err);
         }
     };
 
