@@ -1,5 +1,5 @@
-http = require("http");
-Layer = require("./lib/layer");
+var http = require("http");
+var Layer = require("./lib/layer");
 
 module.exports = function() {
     var index;
@@ -28,6 +28,9 @@ module.exports = function() {
         app.stack.push(new Layer(path, middleware));
     };
 
+    app.handle = function(req, res, next) {
+    };
+
     app.next = function(err) {
         var layer = app.stack[index++];
         if (layer === undefined) {
@@ -42,9 +45,15 @@ module.exports = function() {
             }
         } else {
             var m = layer.handle;
-            if (layer.match(request.url)) {
-                if (m.hasOwnProperty('use')) {
+            request.params = {};
+            var match = layer.match(request.url);
+            if (match) {
+                request.params = match['params'];
+                if (typeof m.handle === "function") {
                     // this middleware is a subapp
+                    if (request.url.indexOf(match.path) === 0) { // strip prefix of parent layer
+                        request.url = request.url.substring(match.path.length, request.url.length);
+                    }
                     if (m.stack.length > 0){
                         m(request, response, app.next);
                     } else {
