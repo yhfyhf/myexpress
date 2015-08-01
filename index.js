@@ -1,5 +1,7 @@
 var http = require("http");
 var Layer = require("./lib/layer");
+var makeRoute = require("./lib/route");
+var methods = require("methods");
 
 module.exports = function() {
     var index;
@@ -85,6 +87,22 @@ module.exports = function() {
             }
         }
     };
+
+    // app.get = function(path, middleware) {
+    //     var handler = makeRoute("get", middleware);
+    //     if (handler) {
+    //         app.use(path, handler);
+    //     }
+    // };
+
+    methods.forEach(function(method) {
+        app[method] = function(path, middleware) {
+            var handler = makeRoute(method, middleware);
+            if (handler) {
+                app.use(path, handler);
+            }
+        };
+    });
 
     return app;
 };
