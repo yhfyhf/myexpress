@@ -10,7 +10,9 @@ Build my own web framework for Node.js similar to [`Express`](http://expressjs.c
 * Request Path matcher and Route handlers
   * Path parameters matching and extraction
   * Nested app prefix path trimming
-* Developing...
+* Monkey Patching request and response
+  * Redirect
+  * set `Content-Type` header
 
 
 ## Quick Start
@@ -48,13 +50,18 @@ app.use(function(req, res, next) {
 });
 
 // mount sub-app
-var sub-app = express();
+var subapp = express();
 app.use('/sub', subapp);
 
 // extract paramters
 app.use('/user/:id', function (req, res, next) {
   console.log('ID:', req.params.id);
   next();
+});
+
+// redirect
+app.use("/foo", function(req, res) {
+  res.redirect("/bar");
 });
 
 app.listen(4000);
@@ -66,6 +73,12 @@ app.listen(4000);
 Based on test-driven development (TDD).
 
 ``` javascript
+"dependencies": {
+  "accepts": "^1.0.1",
+  "methods": "^0.1.0",
+  "mime": "^1.2.11",
+  "path-to-regexp": "^0.1.2"
+},
 "devDependencies": {
   "chai": "^3.2.0", 
   "mocha": "^2.2.5", 
