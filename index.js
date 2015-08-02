@@ -2,6 +2,8 @@ var http = require("http");
 var Layer = require("./lib/layer");
 var makeRoute = require("./lib/route");
 var methods = require("methods");
+var monkeyPatchRequest = require('./lib/request');
+var monkeyPatchResponse = require('./lib/response');
 
 module.exports = function() {
     var index;
@@ -12,6 +14,7 @@ module.exports = function() {
         request = req;
         response = res;
         next = parentNext; // save parentNext
+        app.monkeyPatch(request, response);
         app.next();
     };
 
@@ -56,6 +59,8 @@ module.exports = function() {
                     if (request.url.indexOf(match.path) === 0) { // strip prefix of parent layer
                         request.url = request.url.substring(match.path.length, request.url.length);
                     }
+                    request.app = app._parentApp;
+                    response.app = app._parentApp;
                     if (m.stack.length > 0){
                         m(request, response, app.next);
                     } else {
@@ -88,13 +93,6 @@ module.exports = function() {
         }
     };
 
-    // app.get = function(path, middleware) {
-    //     var handler = makeRoute("get", middleware);
-    //     if (handler) {
-    //         app.use(path, handler);
-    //     }
-    // };
-
     methods.forEach(function(method) {
         app[method] = function(path, middleware) {
             var handler = makeRoute(method, middleware);
@@ -103,6 +101,26 @@ module.exports = function() {
             }
         };
     });
+
+    app._parentApp = null;
+    app.monkeyPatch = function(req, res) {
+        if (!('isExpress' in req)) {
+            var oldReq = req.__proto__;
+            monkeyPatchRequest.__proto__ = oldReq;
+            req.__proto__ = monkeyPatchRequest;
+        }
+        app._parentApp = req.app;
+        req.app = app;
+        req.res = res;
+
+        if (!('isExpress' in res)) {
+            var oldRes = res.__proto__;
+            monkeyPatchResponse.__proto__ = oldRes;
+            res.__proto__ = monkeyPatchResponse;
+        }
+        res.app = app;
+        res.req = req;
+    };
 
     return app;
 };

@@ -22,7 +22,9 @@
     "supertest": "^1.0.1"
   },
   "dependencies": {
+    "accepts": "^1.0.1",
     "methods": "^0.1.0",
+    "mime": "^1.2.11",
     "path-to-regexp": "^0.1.2"
   }
 }
